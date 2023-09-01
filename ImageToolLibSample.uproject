@@ -1,0 +1,22 @@
+{
+	"FileVersion": 3,
+	"EngineAssociation": "{8C6A7DA0-4273-4AF7-6CF9-8FBC9F367F54}",
+	"Category": "",
+	"Description": "",
+	"Modules": [
+		{
+			"Name": "ImageToolLibSample",
+			"Type": "Runtime",
+			"LoadingPhase": "Default"
+		}
+	],
+	"Plugins": [
+		{
+			"Name": "ModelingToolsEditorMode",
+			"Enabled": true,
+			"TargetAllowList": [
+				"Editor"
+			]
+		}
+	]
+}
