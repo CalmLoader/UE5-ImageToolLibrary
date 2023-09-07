@@ -36,17 +36,17 @@ public:
 	static void SaveImageFromTexture2DDy(UTexture2DDynamic* InDyTex, const FString& SavePath);
 
 	UFUNCTION(BlueprintCallable, Category = "ImageTool")
-	static bool SaveRenderTarget2DWithQuality(UTextureRenderTarget2D* RenderTarget2D, const FString& SavePath,
+	static void SaveRenderTarget2DWithQuality(UTextureRenderTarget2D* RenderTarget2D, const FString& SavePath,
 	                                          int32 CompressionQuality);
 	UFUNCTION(BlueprintCallable, Category = "ImageTool")
 	static bool SaveRenderTarget2D(UTextureRenderTarget2D* RenderTarget2D, const FString& SavePath);
 
 	UFUNCTION(BlueprintCallable, Category = "ImageTool")
-	static void RenderWidget(UWidget* Widget, const FVector2D& DrawSize);
+	static UTextureRenderTarget2D* RenderWidget(UWidget* Widget, const FVector2D& DrawSize);
 	UFUNCTION(BlueprintCallable, Category = "ImageTool")
 	static UTexture2D* RenderWidgetToUTexture2D(UWidget* Widget, const FVector2D& DrawSize);
 	UFUNCTION(BlueprintCallable, Category = "ImageTool")
-	static bool RenderWidgetToFile(UWidget* Widget, const FVector2D& DrawSize, const FString& SavePath,
+	static void RenderWidgetToFile(UWidget* Widget, const FVector2D& DrawSize, const FString& SavePath,
 	                               int32 CompressionQuality);
 
 private:

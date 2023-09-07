@@ -164,15 +164,18 @@ void UImageToolBPLibrary::SaveImageFromTexture2DDy(UTexture2DDynamic* InDyTex, c
 		});
 }
 
-void UImageToolBPLibrary::RenderWidget(UWidget* Widget, const FVector2D& DrawSize)
+UTextureRenderTarget2D* UImageToolBPLibrary::RenderWidget(UWidget* Widget, const FVector2D& DrawSize)
 {
 	if (FSlateApplication::IsInitialized() && Widget)
 	{
 		FWidgetRenderer* WidgetRenderer = new FWidgetRenderer(false);
-		if (!WidgetRenderer) return;
+		UTextureRenderTarget2D* TextureRenderTarget = NewObject<UTextureRenderTarget2D>();
+		TextureRenderTarget->InitAutoFormat(DrawSize.X, DrawSize.Y);
 		const TSharedRef<SWidget> SlateWidget = Widget->TakeWidget();
-		WidgetRenderer->DrawWidget(SlateWidget, DrawSize);
+		WidgetRenderer->DrawWidget(TextureRenderTarget, SlateWidget, DrawSize, 1.0f);
+		return TextureRenderTarget;
 	}
+	return nullptr;
 }
 
 bool UImageToolBPLibrary::SaveRenderTarget2D(UTextureRenderTarget2D* RenderTarget2D, const FString& SavePath)
@@ -188,7 +191,7 @@ bool UImageToolBPLibrary::SaveRenderTarget2D(UTextureRenderTarget2D* RenderTarge
 	return FFileHelper::SaveArrayToFile(CompressedBitmap, *SavePath);
 }
 
-bool UImageToolBPLibrary::SaveRenderTarget2DWithQuality(UTextureRenderTarget2D* RenderTarget2D, const FString& SavePath,
+void UImageToolBPLibrary::SaveRenderTarget2DWithQuality(UTextureRenderTarget2D* RenderTarget2D, const FString& SavePath,
                                                         int32 CompressionQuality)
 {
 	if (RenderTarget2D)
@@ -211,9 +214,7 @@ bool UImageToolBPLibrary::SaveRenderTarget2DWithQuality(UTextureRenderTarget2D* 
 				Opt.Format = EDesiredImageFormat::PNG;
 		}
 		UImageWriteBlueprintLibrary::ExportToDisk(RenderTarget2D, SavePath, Opt);
-		return true;
 	}
-	return false;
 }
 
 UTexture2D* UImageToolBPLibrary::RenderWidgetToUTexture2D(UWidget* Widget, const FVector2D& DrawSize)
@@ -226,8 +227,8 @@ UTexture2D* UImageToolBPLibrary::RenderWidgetToUTexture2D(UWidget* Widget, const
 			TextureRenderTarget->ClearColor = FLinearColor::Transparent;
 			TextureRenderTarget->InitAutoFormat(DrawSize.X, DrawSize.Y);
 			const TSharedRef<SWidget> SlateWidget = Widget->TakeWidget();
-			UTexture2D* RenderTex = nullptr;
 			WidgetRenderer->DrawWidget(TextureRenderTarget, SlateWidget, DrawSize, 1.0f);
+			UTexture2D* RenderTex = nullptr;
 			if (TextureRenderTarget)
 			{
 				FTextureRenderTargetResource* RTResource = TextureRenderTarget->GameThread_GetRenderTargetResource();
@@ -240,11 +241,9 @@ UTexture2D* UImageToolBPLibrary::RenderWidgetToUTexture2D(UWidget* Widget, const
 				FImageUtils::ThumbnailCompressImageArray(Width, Height, WindowColor, ResultData);
 
 				IImageWrapperModule& ImageWrapperModule = FModuleManager::LoadModuleChecked<IImageWrapperModule>("ImageWrapper");
-				TSharedPtr<IImageWrapper> ImageWrapper = ImageWrapperModule.CreateImageWrapper(EImageFormat::PNG);
-				if (ImageWrapper.IsValid() && ImageWrapper->SetCompressed(ResultData.GetData(),
-				                                                          ResultData.GetAllocatedSize()))
+				TSharedPtr<IImageWrapper> ImageWrapper = ImageWrapperModule.CreateImageWrapper(EImageFormat::JPEG);
+				if (ImageWrapper.IsValid() && ImageWrapper->SetCompressed(ResultData.GetData(), ResultData.GetAllocatedSize()))
 				{
-					
 					TArray<uint8> OutRawData;
 					ImageWrapper->GetRaw(ERGBFormat::BGRA, 8, OutRawData);
 					Width = ImageWrapper->GetWidth();
@@ -261,14 +260,13 @@ UTexture2D* UImageToolBPLibrary::RenderWidgetToUTexture2D(UWidget* Widget, const
 			}
 			delete WidgetRenderer;
 			WidgetRenderer = nullptr;
-			TextureRenderTarget = nullptr;
 			return RenderTex;
 		}
 	}
 	return nullptr;
 }
 
-bool UImageToolBPLibrary::RenderWidgetToFile(UWidget* Widget, const FVector2D& DrawSize, const FString& SavePath,
+void UImageToolBPLibrary::RenderWidgetToFile(UWidget* Widget, const FVector2D& DrawSize, const FString& SavePath,
                                        int32 CompressionQuality)
 {
 	if (FSlateApplication::IsInitialized() && Widget)
@@ -279,13 +277,11 @@ bool UImageToolBPLibrary::RenderWidgetToFile(UWidget* Widget, const FVector2D& D
 			TextureRenderTarget->InitAutoFormat(DrawSize.X, DrawSize.Y);
 			TSharedRef<SWidget> SlateWidget = Widget->TakeWidget();
 			WidgetRenderer->DrawWidget(TextureRenderTarget, SlateWidget, DrawSize, 1.0f);
-			const bool bSave = SaveRenderTarget2DWithQuality(TextureRenderTarget, SavePath, CompressionQuality);
+			SaveRenderTarget2DWithQuality(TextureRenderTarget, SavePath, CompressionQuality);
 			// delete WidgetRenderer;
 			// WidgetRenderer = nullptr;
-			return bSave;
 		}
 	}
-	return false;
 }
 
 //--------------private-------------------
