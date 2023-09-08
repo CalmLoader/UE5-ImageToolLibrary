@@ -36,19 +36,13 @@ public:
 	static void SaveImageFromTexture2DDy(UTexture2DDynamic* InDyTex, const FString& SavePath);
 
 	UFUNCTION(BlueprintCallable, Category = "ImageTool")
-	static void SaveRenderTarget2DWithQuality(UTextureRenderTarget2D* RenderTarget2D, const FString& SavePath,
-	                                          int32 CompressionQuality);
-	UFUNCTION(BlueprintCallable, Category = "ImageTool")
-	static bool SaveRenderTarget2D(UTextureRenderTarget2D* RenderTarget2D, const FString& SavePath);
-
-	UFUNCTION(BlueprintCallable, Category = "ImageTool")
 	static UTextureRenderTarget2D* RenderWidget(UWidget* Widget, const FVector2D& DrawSize);
 	UFUNCTION(BlueprintCallable, Category = "ImageTool")
-	static UTexture2D* RenderWidgetToUTexture2D(UWidget* Widget, const FVector2D& DrawSize);
+	static bool SaveRenderTarget2D(UTextureRenderTarget2D* RenderTarget2D, const FString& SavePath);
+	
 	UFUNCTION(BlueprintCallable, Category = "ImageTool")
-	static void RenderWidgetToFile(UWidget* Widget, const FVector2D& DrawSize, const FString& SavePath,
-	                               int32 CompressionQuality);
-
+	static UTexture2D* RenderWidgetToUTexture2D(UWidget* Widget, const FVector2D& DrawSize);
+	
 private:
 	static bool LoadImageToData(const FString& ImagePath, TArray64<uint8>& OutData, int32& Width, int32& Height);
 	static bool SaveImageFromRawData(TArray64<uint8>& RawData, const FString& SavePath, const int32& Width, const int32& Height);

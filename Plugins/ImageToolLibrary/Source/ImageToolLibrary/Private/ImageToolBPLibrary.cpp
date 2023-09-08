@@ -9,8 +9,6 @@
 #include "Engine/TextureRenderTarget2D.h"
 #include "Engine/Texture.h"
 #include "Components/Widget.h"
-#include "ImageWriteBlueprintLibrary.h"
-
 
 void UImageToolBPLibrary::GetImageResolution(const FString& ImagePath, FVector2D& Resolution)
 {
@@ -120,12 +118,14 @@ bool UImageToolBPLibrary::SaveImageFromTexture2D(UTexture2D* InTex, const FStrin
 {
 	if (InTex)
 	{
+#if WITH_EDITOR
 		TArray64<uint8> OutData;
 		InTex->Source.GetMipData(OutData, 0);
 		int32 Width = InTex->GetSizeX();
 		int32 Height = InTex->GetSizeY();
 		const bool bSave = SaveImageFromRawData(OutData, SavePath, Width, Height);
 		return bSave;
+#endif
 	}
 	return false;
 }
@@ -191,32 +191,6 @@ bool UImageToolBPLibrary::SaveRenderTarget2D(UTextureRenderTarget2D* RenderTarge
 	return FFileHelper::SaveArrayToFile(CompressedBitmap, *SavePath);
 }
 
-void UImageToolBPLibrary::SaveRenderTarget2DWithQuality(UTextureRenderTarget2D* RenderTarget2D, const FString& SavePath,
-                                                        int32 CompressionQuality)
-{
-	if (RenderTarget2D)
-	{
-		FImageWriteOptions Opt;
-		Opt.bAsync = false;
-		Opt.bOverwriteFile = true;
-		Opt.CompressionQuality = CompressionQuality;
-		EImageFormat ImageFormat;
-		GetImageFormatFromPath(SavePath, ImageFormat);
-		switch (ImageFormat)
-		{
-			case EImageFormat::PNG:
-				Opt.Format = EDesiredImageFormat::PNG;
-				break;
-			case EImageFormat::JPEG:
-				Opt.Format = EDesiredImageFormat::JPG;
-				break;
-			default:
-				Opt.Format = EDesiredImageFormat::PNG;
-		}
-		UImageWriteBlueprintLibrary::ExportToDisk(RenderTarget2D, SavePath, Opt);
-	}
-}
-
 UTexture2D* UImageToolBPLibrary::RenderWidgetToUTexture2D(UWidget* Widget, const FVector2D& DrawSize)
 {
 	if (FSlateApplication::IsInitialized() && Widget)
@@ -266,23 +240,6 @@ UTexture2D* UImageToolBPLibrary::RenderWidgetToUTexture2D(UWidget* Widget, const
 	return nullptr;
 }
 
-void UImageToolBPLibrary::RenderWidgetToFile(UWidget* Widget, const FVector2D& DrawSize, const FString& SavePath,
-                                       int32 CompressionQuality)
-{
-	if (FSlateApplication::IsInitialized() && Widget)
-	{
-		if(FWidgetRenderer* WidgetRenderer = new FWidgetRenderer(false))
-		{
-			UTextureRenderTarget2D* TextureRenderTarget = NewObject<UTextureRenderTarget2D>();
-			TextureRenderTarget->InitAutoFormat(DrawSize.X, DrawSize.Y);
-			TSharedRef<SWidget> SlateWidget = Widget->TakeWidget();
-			WidgetRenderer->DrawWidget(TextureRenderTarget, SlateWidget, DrawSize, 1.0f);
-			SaveRenderTarget2DWithQuality(TextureRenderTarget, SavePath, CompressionQuality);
-			// delete WidgetRenderer;
-			// WidgetRenderer = nullptr;
-		}
-	}
-}
 
 //--------------private-------------------
 
