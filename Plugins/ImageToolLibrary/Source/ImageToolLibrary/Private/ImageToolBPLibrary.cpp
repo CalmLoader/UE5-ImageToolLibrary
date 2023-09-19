@@ -143,12 +143,13 @@ void UImageToolBPLibrary::SaveImageFromTexture2DDy(UTexture2DDynamic* InDyTex, c
 			int32 Height = TextureRHI->GetSizeY();
 			uint32 DestStride = 0;
 			const uint8* DestData = static_cast<uint8*>(RHILockTexture2D(TextureRHI, 0, RLM_ReadOnly, DestStride, false,
-																		 false));
+			                                                             false));
 			RawData->SetNum(Width * Height * 4);
 			for (int32 y = 0; y < Height; y++)
 			{
 				const uint8* DestPtr = &DestData[(static_cast<int64>(Height) - 1 - y) * DestStride];
-				FColor* SrcPtr = &(reinterpret_cast<FColor*>(RawData->GetData()))[(static_cast<int64>(Height) - 1 - y) * Width];
+				FColor* SrcPtr = &(reinterpret_cast<FColor*>(RawData->GetData()))[(static_cast<int64>(Height) - 1 - y) *
+					Width];
 				for (int32 x = 0; x < Width; x++)
 				{
 					SrcPtr->B = *DestPtr++;
@@ -195,7 +196,7 @@ UTexture2D* UImageToolBPLibrary::RenderWidgetToUTexture2D(UWidget* Widget, const
 {
 	if (FSlateApplication::IsInitialized() && Widget)
 	{
-		if(FWidgetRenderer* WidgetRenderer = new FWidgetRenderer(false))
+		if (FWidgetRenderer* WidgetRenderer = new FWidgetRenderer(false))
 		{
 			UTextureRenderTarget2D* TextureRenderTarget = NewObject<UTextureRenderTarget2D>();
 			TextureRenderTarget->ClearColor = FLinearColor::Transparent;
@@ -214,9 +215,11 @@ UTexture2D* UImageToolBPLibrary::RenderWidgetToUTexture2D(UWidget* Widget, const
 				TArray<uint8> ResultData;
 				FImageUtils::ThumbnailCompressImageArray(Width, Height, WindowColor, ResultData);
 
-				IImageWrapperModule& ImageWrapperModule = FModuleManager::LoadModuleChecked<IImageWrapperModule>("ImageWrapper");
+				IImageWrapperModule& ImageWrapperModule = FModuleManager::LoadModuleChecked<IImageWrapperModule>(
+					"ImageWrapper");
 				TSharedPtr<IImageWrapper> ImageWrapper = ImageWrapperModule.CreateImageWrapper(EImageFormat::JPEG);
-				if (ImageWrapper.IsValid() && ImageWrapper->SetCompressed(ResultData.GetData(), ResultData.GetAllocatedSize()))
+				if (ImageWrapper.IsValid() && ImageWrapper->SetCompressed(
+					ResultData.GetData(), ResultData.GetAllocatedSize()))
 				{
 					TArray<uint8> OutRawData;
 					ImageWrapper->GetRaw(ERGBFormat::BGRA, 8, OutRawData);
@@ -244,7 +247,8 @@ UTexture2D* UImageToolBPLibrary::RenderWidgetToUTexture2D(UWidget* Widget, const
 //--------------private-------------------
 
 
-bool UImageToolBPLibrary::SaveImageFromRawData(TArray64<uint8>& OutData, const FString& SavePath, const int32& Width, const int32& Height)
+bool UImageToolBPLibrary::SaveImageFromRawData(TArray64<uint8>& OutData, const FString& SavePath, const int32& Width,
+                                               const int32& Height)
 {
 	EImageFormat ImageFormat;
 	GetImageFormatFromPath(SavePath, ImageFormat);
@@ -260,7 +264,8 @@ bool UImageToolBPLibrary::SaveImageFromRawData(TArray64<uint8>& OutData, const F
 	return false;
 }
 
-bool UImageToolBPLibrary::LoadImageToData(const FString& ImagePath, TArray64<uint8>& OutData, int32& Width, int32& Height)
+bool UImageToolBPLibrary::LoadImageToData(const FString& ImagePath, TArray64<uint8>& OutData, int32& Width,
+                                          int32& Height)
 {
 	//取出图片的二进制数据
 	TArray<uint8> ImageResultData;
@@ -277,7 +282,8 @@ bool UImageToolBPLibrary::LoadImageToData(const FString& ImagePath, TArray64<uin
 	IImageWrapperModule& ImageWrapperModule = FModuleManager::LoadModuleChecked<IImageWrapperModule>("ImageWrapper");
 	//根据不同的图片格式创建不同的图片处理类的具体实例
 	const TSharedPtr<IImageWrapper> ImageWrapperPtr = ImageWrapperModule.CreateImageWrapper(ImageFormat);
-	if (ImageWrapperPtr.IsValid() && ImageWrapperPtr->SetCompressed(ImageResultData.GetData(), ImageResultData.GetAllocatedSize()))
+	if (ImageWrapperPtr.IsValid() && ImageWrapperPtr->SetCompressed(ImageResultData.GetData(),
+	                                                                ImageResultData.GetAllocatedSize()))
 	{
 		//OutData 与格式无关的颜色数据
 		ImageWrapperPtr->GetRaw(ERGBFormat::BGRA, 8, OutData);
@@ -302,4 +308,42 @@ void UImageToolBPLibrary::GetImageFormatFromPath(const FString& Path, EImageForm
 	{
 		ImageFormat = EImageFormat::PNG;
 	}
+}
+
+bool UImageToolBPLibrary::PackTexture(const FString& TexturesDir, const FString& PackPath, const int PackSize)
+{
+	TArray<FString> Files;
+	const FString FullPath = FPaths::ConvertRelativePathToFull(TexturesDir);
+	IFileManager::Get().FindFiles(Files, *FullPath);
+	TArray64<uint8>* RawData = new TArray64<uint8>();
+	const int Stride = 4;
+	RawData->SetNum(PackSize * PackSize * Stride);
+	int StartRow = 0;
+	int StartCol = 0;
+	for (int i = 0; i < Files.Num(); i++)
+	{
+		FString FilePath = FullPath / Files[i];
+		TArray64<uint8> OutData;
+		int Width;
+		int Height;
+		if (LoadImageToData(FilePath, OutData, Width, Height))
+		{
+			for (int32 y = 0; y < Height; y++)
+			{
+				const uint8* DestPtr = &OutData[y * Width * Stride];
+				FColor* SrcPtr = &(reinterpret_cast<FColor*>(RawData->GetData()))[(y + StartRow) * PackSize + StartCol];
+				for (int32 x = 0; x < Width; x++)
+				{
+					SrcPtr->B = *DestPtr++;
+					SrcPtr->G = *DestPtr++;
+					SrcPtr->R = *DestPtr++;
+					SrcPtr->A = *DestPtr++;
+					SrcPtr++;
+				}
+			}
+			StartRow += Height;
+			StartCol += Width;
+		}
+	}
+	return SaveImageFromRawData(*RawData, PackPath, PackSize, PackSize);
 }

@@ -5,7 +5,6 @@
 #include "CoreMinimal.h"
 #include "IImageWrapper.h"
 #include "Kismet/BlueprintFunctionLibrary.h"
-#include "Engine/Texture2DDynamic.h"
 #include "Engine/Texture2D.h"
 #include "ImageToolBPLibrary.generated.h"
 
@@ -39,12 +38,16 @@ public:
 	static UTextureRenderTarget2D* RenderWidget(UWidget* Widget, const FVector2D& DrawSize);
 	UFUNCTION(BlueprintCallable, Category = "ImageTool")
 	static bool SaveRenderTarget2D(UTextureRenderTarget2D* RenderTarget2D, const FString& SavePath);
-	
+
 	UFUNCTION(BlueprintCallable, Category = "ImageTool")
 	static UTexture2D* RenderWidgetToUTexture2D(UWidget* Widget, const FVector2D& DrawSize);
-	
+
+	UFUNCTION(BlueprintCallable, Category = "ImageTool")
+	static bool PackTexture(const FString& TexturesDir, const FString& PackPath, const int PackSize = 2048);
+
 private:
 	static bool LoadImageToData(const FString& ImagePath, TArray64<uint8>& OutData, int32& Width, int32& Height);
-	static bool SaveImageFromRawData(TArray64<uint8>& RawData, const FString& SavePath, const int32& Width, const int32& Height);
+	static bool SaveImageFromRawData(TArray64<uint8>& RawData, const FString& SavePath, const int32& Width,
+	                                 const int32& Height);
 	static void GetImageFormatFromPath(const FString& Path, EImageFormat& ImageFormat);
 };
