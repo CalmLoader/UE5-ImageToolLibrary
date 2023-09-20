@@ -7,6 +7,7 @@
 #include "Slate/WidgetRenderer.h"
 #include "ImageUtils.h"
 #include "Engine/TextureRenderTarget2D.h"
+#include "Engine/Texture2DDynamic.h"
 #include "Engine/Texture.h"
 #include "Components/Widget.h"
 
